@@ -1,0 +1,358 @@
+#define MX_PIC
+
+#define MX_USES_UINT8 1
+#define MX_USES_SINT16 0
+#define MX_USES_CHAR 0
+#define MX_USES_FLOAT 0
+#define MX_USES_SINT32 0
+#define MX_USES_BOOL 1
+#define MX_USES_UINT16 0
+#define MX_USES_UINT32 0
+//Mikrodenetleyici için tan?mlamalar
+#define P16F628A
+#define FC_CAL_PIC
+#define MX_EE
+#define MX_EE_SIZE 128
+#define MX_UART_1
+#define MX_UART_1_TX_PORT portb
+#define MX_UART_1_TX_TRIS trisb
+#define MX_UART_1_TX_PIN 2
+#define MX_UART_1_RX_PORT portb
+#define MX_UART_1_RX_TRIS trisb
+#define MX_UART_1_RX_PIN 1
+#define MX_PWM
+#define MX_PWM_CNT 1
+#define MX_PWM_PSCA1
+#define MX_PWM_PSCA4
+#define MX_PWM_PSCA16
+#define MX_PWM_1_PORT portb
+#define MX_PWM_1_TRIS trisb
+#define MX_PWM_1_PIN 3
+
+//Fonksiyonlar
+#define MX_CLK_SPEED 4000000
+#ifdef _BOOSTC
+#include <system.h>
+#endif
+#ifdef HI_TECH_C
+#include <pic.h>
+#endif
+
+//Dosya yap?land?rmas?
+#ifdef _BOOSTC
+#pragma DATA 0x2007, 0x3f09
+#endif
+#ifdef HI_TECH_C
+__CONFIG(0x3f09);
+#endif
+
+//Dahili fonksiyonlar
+#include "C:\Program Files (x86)\Flowcode\v5\FCD\internals.c"
+
+//Makro fonksiyon bildirileri
+
+
+//De?i?ken bildirileri
+#define FCV_TRUE (1)
+#define FCV_FALSE (0)
+MX_BOOL FCV_MOTSOL_GER = (0); // lSOL MOTOR GERI
+MX_BOOL FCV_HIZ = (0);
+MX_BOOL FCV_SENSOL; // SOL SENSOR
+MX_BOOL FCV_SENORT = (0); // ORTA SENSOR
+MX_BOOL FCV_MOTSAG = (0); // SAG MOTOR
+MX_BOOL FCV_MOTSAG_GER = (0); // SAG MOTOR GERI
+MX_BOOL FCV_SENSOR = (0); // TUM SENSORLAR
+MX_BOOL FCV_SENSAG = (0); // SAG SENSOR
+MX_BOOL FCV_MOTSOL = (0); // SOL MOTOR
+
+
+
+#include "C:\Program Files (x86)\Flowcode\v5\CAL\includes.c"
+
+//Makro uygulamas?
+
+
+
+void main()
+{
+	//Initialization
+	cmcon = 0x07;
+
+
+	//Interrupt initialization code
+	option_reg = 0xC0;
+
+
+	//Hesaplama  
+	//Hesaplama  :
+	//  SENORT = 0
+	//  SENSAG = 0
+	//  SENSOL = 0
+	//  SENSOR = 0
+	//  HIZ = 0
+	FCV_SENORT = 0;
+	FCV_SENSAG = 0;
+	FCV_SENSOL = 0;
+	FCV_SENSOR = 0;
+	FCV_HIZ = 0;
+
+	//Ba?lant? noktas?
+	//Ba?lant? noktas?: [A]: A
+FCC_Main_A:
+;
+
+	//Girdi
+	//Girdi: A1 -> SENORT
+	trisa = trisa | 0x02;
+	FCV_SENORT = ((porta & 0x02) == 0x02);
+
+	//Girdi
+	//Girdi: A0 -> SENSOL
+	trisa = trisa | 0x01;
+	FCV_SENSOL = ((porta & 0x01) == 0x01);
+
+	//Girdi
+	//Girdi: A2 -> SENSAG
+	trisa = trisa | 0x04;
+	FCV_SENSAG = ((porta & 0x04) == 0x04);
+
+	//RUNNING LAMBASI
+	//Hesaplama  :
+	//  SENSOR = SENSOR + 1
+	FCV_SENSOR = FCV_SENSOR + 1;
+
+	//Karar  
+	//Karar  : SENORT = 1?
+	if (FCV_SENORT == 1)
+	{
+
+		//Karar  
+		//Karar  : SENSOL = 1?
+		if (FCV_SENSOL == 1)
+		{
+
+			//Karar  
+			//Karar  : SENSAG = 1?
+			if (FCV_SENSAG == 1)
+			{
+
+				//S-S-S > ILERI YAVAS
+				//Hesaplama  :
+				//  HIZ = 0
+				//  MOTSAG = 1
+				//  MOTSOL = 1
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 0;
+				FCV_MOTSAG = 1;
+				FCV_MOTSOL = 1;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			} else {
+
+				//S-S-B > SOL STOP
+				//Hesaplama  :
+				//  HIZ = 1
+				//  MOTSAG = 1
+				//  MOTSOL = 0
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 1;
+				FCV_MOTSAG = 1;
+				FCV_MOTSOL = 0;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			}
+
+		} else {
+
+			//Karar  
+			//Karar  : SENSAG = 1?
+			if (FCV_SENSAG == 1)
+			{
+
+				//B-S-S > SAG=STOP
+				//Hesaplama  :
+				//  HIZ = 1
+				//  MOTSAG = 0
+				//  MOTSOL = 1
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 1;
+				FCV_MOTSAG = 0;
+				FCV_MOTSOL = 1;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			} else {
+
+				//B-S-B > ILERI HIZLI
+				//Hesaplama  :
+				//  HIZ = 1
+				//  MOTSAG = 1
+				//  MOTSOL = 1
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 1;
+				FCV_MOTSAG = 1;
+				FCV_MOTSOL = 1;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			}
+
+		}
+
+	} else {
+
+		//Karar  
+		//Karar  : SENSAG = 1?
+		if (FCV_SENSAG == 1)
+		{
+
+			//Karar  
+			//Karar  : SENSOL = 1?
+			if (FCV_SENSOL == 1)
+			{
+
+				//S-B-S > HATA=STOP
+				//Hesaplama  :
+				//  HIZ = 0
+				//  MOTSAG = 0
+				//  MOTSOL = 0
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				//  SENSOR = 1
+				FCV_HIZ = 0;
+				FCV_MOTSAG = 0;
+				FCV_MOTSOL = 0;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+				FCV_SENSOR = 1;
+
+			} else {
+
+				//B-B-S > SAG=STOP
+				//Hesaplama  :
+				//  HIZ = 0
+				//  MOTSAG = 0
+				//  MOTSOL = 1
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 0;
+				FCV_MOTSAG = 0;
+				FCV_MOTSOL = 1;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			}
+
+		} else {
+
+			//Karar  
+			//Karar  : SENSOL = 1?
+			if (FCV_SENSOL == 1)
+			{
+
+				//S-B-B > SOL=STOP
+				//Hesaplama  :
+				//  HIZ = 0
+				//  MOTSAG = 1
+				//  MOTSOL = 0
+				//  MOTSAG_GER = 0
+				//  MOTSOL_GER = 0
+				FCV_HIZ = 0;
+				FCV_MOTSAG = 1;
+				FCV_MOTSOL = 0;
+				FCV_MOTSAG_GER = 0;
+				FCV_MOTSOL_GER = 0;
+
+			} else {
+
+				//B-B-B > GERI
+				//Hesaplama  :
+				//  HIZ = 0
+				//  MOTSAG = 0
+				//  MOTSOL = 0
+				//  MOTSAG_GER = 1
+				//  MOTSOL_GER = 1
+				FCV_HIZ = 0;
+				FCV_MOTSAG = 0;
+				FCV_MOTSOL = 0;
+				FCV_MOTSAG_GER = 1;
+				FCV_MOTSOL_GER = 1;
+
+			}
+
+		}
+
+	}
+
+	//HATA Ç?kt?s?
+	//Ç?kt?  : SENSOR -> B6
+	trisb = trisb & 0xBF;
+	if ((FCV_SENSOR))
+		portb = (portb & 0xBF) | 0x40;
+	else
+		portb = portb & 0xBF;
+
+	//SAG MOTOR A Ç?kt?  
+	//Ç?kt?  : MOTSAG -> B0
+	trisb = trisb & 0xFE;
+	if ((FCV_MOTSAG))
+		portb = (portb & 0xFE) | 0x01;
+	else
+		portb = portb & 0xFE;
+
+	//SAG MOTOR B Ç?kt?  
+	//Ç?kt?  : MOTSAG_GER -> B1
+	trisb = trisb & 0xFD;
+	if ((FCV_MOTSAG_GER))
+		portb = (portb & 0xFD) | 0x02;
+	else
+		portb = portb & 0xFD;
+
+	//SOL MOTOR A Ç?kt?  
+	//Ç?kt?  : MOTSOL -> B2
+	trisb = trisb & 0xFB;
+	if ((FCV_MOTSOL))
+		portb = (portb & 0xFB) | 0x04;
+	else
+		portb = portb & 0xFB;
+
+	//SOL MOTOR BÇ?kt?
+	//Ç?kt?  : MOTSOL_GER -> B3
+	trisb = trisb & 0xF7;
+	if ((FCV_MOTSOL_GER))
+		portb = (portb & 0xF7) | 0x08;
+	else
+		portb = portb & 0xF7;
+
+	//HIZ Ç?kt?s?
+	//Ç?kt?  : HIZ -> B7
+	trisb = trisb & 0x7F;
+	if ((FCV_HIZ))
+		portb = (portb & 0x7F) | 0x80;
+	else
+		portb = portb & 0x7F;
+
+	//Gecikme   
+	//Gecikme   : 500 ms
+	delay_ms(255);
+	delay_ms(245);
+
+	//Ba?lant? noktas?na git
+	//Ba?lant? noktas?na git: [A]: A
+	goto FCC_Main_A;
+
+	mainendloop: goto mainendloop;
+}
+
+void MX_INTERRUPT_MACRO(void)
+{
+}
+
+
+
